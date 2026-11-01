@@ -120,10 +120,10 @@ function LoginForm() {
               onClick={tryDemo}
             >
               {demoBusy ? <Spinner /> : <Sparkles size={17} />}
-              {demoBusy ? "Opening demo…" : "Use demo account"}
+              {demoBusy ? "Opening Audiva…" : "Explore Audiva"}
               <ArrowRight size={17} />
             </button>
-            <p>No signup needed. Explore your own demo workspace.</p>
+            <p>No signup required.</p>
           </div>
           <form onSubmit={submit}>
             {register && (
