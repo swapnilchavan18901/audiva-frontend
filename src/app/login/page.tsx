@@ -10,15 +10,32 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ErrorNotice, Logo, Spinner, Wave } from "@/components/ui";
-import { login, register as registerAccount, message } from "@/lib/api";
+import { login, loginDemo, register as registerAccount, message } from "@/lib/api";
 function LoginForm() {
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const search = useSearchParams();
+  async function tryDemo() {
+    if (busy) return;
+    setBusy(true);
+    setDemoBusy(true);
+    setError("");
+    try {
+      await loginDemo();
+      router.replace("/clinic");
+      router.refresh();
+    } catch (e) {
+      setError(message(e));
+      setBusy(false);
+      setDemoBusy(false);
+    }
+  }
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (busy) return;
     const form = new FormData(e.currentTarget);
     setBusy(true);
     setError("");
@@ -95,6 +112,19 @@ function LoginForm() {
               Your session expired. Please sign in again.
             </div>
           )}
+          <div className="auth-demo">
+            <button
+              type="button"
+              className="button secondary full"
+              disabled={busy}
+              onClick={tryDemo}
+            >
+              {demoBusy ? <Spinner /> : <Sparkles size={17} />}
+              {demoBusy ? "Opening demo…" : "Use demo account"}
+              <ArrowRight size={17} />
+            </button>
+            <p>No signup needed. Explore your own demo workspace.</p>
+          </div>
           <form onSubmit={submit}>
             {register && (
               <label className="field">
@@ -135,7 +165,7 @@ function LoginForm() {
             </label>
             <ErrorNotice text={error} />
             <button className="button primary full" disabled={busy}>
-              {busy ? <Spinner /> : null}
+              {busy && !demoBusy ? <Spinner /> : null}
               {register ? "Create account" : "Sign in"}
               <ArrowRight size={17} />
             </button>
@@ -143,6 +173,7 @@ function LoginForm() {
           <div className="auth-switch">
             {register ? "Already have an account?" : "New to Audiva?"}{" "}
             <button
+              disabled={busy}
               onClick={() => {
                 setRegister(!register);
                 setError("");

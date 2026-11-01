@@ -38,6 +38,11 @@ export async function login(data: { email: string; password: string }) {
   setAccessToken(response.access_token);
   return response;
 }
+export async function loginDemo() {
+  const response = (await apiClient.post<AuthResponse>("/auth/demo")).data;
+  setAccessToken(response.access_token);
+  return response;
+}
 export async function register(data: {
   email: string;
   password: string;

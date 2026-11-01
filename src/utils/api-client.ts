@@ -64,6 +64,7 @@ apiClient.interceptors.request.use((config) => {
   if (
     token &&
     config.url !== "/auth/login" &&
+    config.url !== "/auth/demo" &&
     config.url !== "/auth/register"
   ) {
     config.headers.set("Authorization", `Bearer ${token}`);
@@ -81,6 +82,7 @@ apiClient.interceptors.response.use(
       status === 401 &&
       typeof window !== "undefined" &&
       error.config?.url !== "/auth/login" &&
+      error.config?.url !== "/auth/demo" &&
       error.config?.url !== "/auth/register" &&
       (!getAccessToken() ||
         error.config?.headers.get("Authorization") ===

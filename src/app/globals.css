@@ -1892,6 +1892,17 @@ tr:last-child td {
 .login-form-wrap .button > svg:last-child {
   margin-left: auto;
 }
+.auth-demo {
+  padding-bottom: 22px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.auth-demo p {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--secondary);
+}
 .auth-switch {
   font-size: 11px;
   color: var(--secondary);
