@@ -23,6 +23,7 @@ import {
   message,
 } from "@/lib/api";
 import { getAccessToken } from "@/utils/api-client";
+import { Logo, Spinner } from "./ui";
 import {
   Organization,
   User,
@@ -112,6 +113,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   if (!user) {
     return (
       <main className="main-content">
+        <div className="workspace-loading-brand"><Logo /></div>
         {error ? (
           <>
             <p role="alert">{error}</p>
@@ -126,7 +128,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             </button>
           </>
         ) : (
-          <p role="status">Loading your workspace…</p>
+          <p role="status" className="workspace-loading-status"><Spinner /> Loading your workspace…</p>
         )}
       </main>
     );

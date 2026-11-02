@@ -379,28 +379,28 @@ function PhoneWorkspace({
                   </span>
                   <p className="phone-description">
                     {route.enabled
-                      ? "The number must also be connected to this assistant in Exotel. Incoming calls work even when the dashboard is closed."
+                      ? "The number must also be connected to this assistant in Twilio. Incoming calls work even when the dashboard is closed."
                       : "New inbound sessions are blocked. Calls already connected can finish."}
                   </p>
-                  {route.inbound_stream_url && (
+                  {route.inbound_answer_url && (
                     <details className="phone-connection">
-                      <summary>Exotel connection</summary>
+                      <summary>Twilio connection</summary>
                       <p>
-                        Use this private connection URL in the Exotel Voicebot
-                        applet.
+                        Set your Twilio number’s “A call comes in” webhook to this
+                        private URL using HTTP POST.
                       </p>
                       <label className="field">
-                        Connection URL
+                        Incoming call webhook (POST)
                         <input
                           type={revealUrl ? "text" : "password"}
                           readOnly
-                          value={route.inbound_stream_url}
+                          value={route.inbound_answer_url}
                           autoComplete="off"
                         />
                       </label>
                       <div className="phone-actions">
                         <CopyButton
-                          value={route.inbound_stream_url}
+                          value={route.inbound_answer_url}
                           label="Copy connection URL"
                         />
                         <button
@@ -428,7 +428,7 @@ function PhoneWorkspace({
                     </button>
                   ) : (
                     <p className="phone-description">
-                      Ask your platform operator to assign the Exotel number.
+                      Ask your platform operator to assign the Twilio number.
                     </p>
                   )}
                 </>
@@ -497,7 +497,7 @@ function PhoneWorkspace({
                   <p className="phone-description">
                     {capabilities.outbound_ready
                       ? "Starts a real phone call. Appointments are saved only after the patient confirms."
-                      : "Outbound calling is unavailable. Ask your administrator to check the Exotel configuration."}
+                      : "Outbound calling is unavailable. Ask your administrator to check the Twilio configuration."}
                   </p>
                   {callResult && (
                     <p className="phone-call-result" role="status">
@@ -591,7 +591,7 @@ function PhoneWorkspace({
                     <td className="phone-call-detail">
                       {call.error && <p>{call.error}</p>}
                       {call.provider_call_sid && (
-                        <small>Exotel ID: {call.provider_call_sid}</small>
+                        <small>Twilio ID: {call.provider_call_sid}</small>
                       )}
                       {call.status === "unknown" && capabilities?.can_call && (
                         <button
@@ -741,16 +741,16 @@ function RouteEditor({
   return (
     <Modal
       title="Clinic phone settings"
-      subtitle="Assign an Exotel number to this clinic assistant."
+      subtitle="Assign a Twilio number to this clinic assistant."
       onClose={() => {
         if (!busy) onClose();
       }}
     >
       <form onSubmit={save}>
         <label className="field">
-          Exotel clinic number
+          Twilio clinic number
           <span className="field-hint">
-            Use a number allocated to your Exotel account, including its country
+            Use a number allocated to your Twilio account, including its country
             code.
           </span>
           <input
@@ -774,8 +774,8 @@ function RouteEditor({
           Enable incoming calls in Audiva
         </label>
         <p className="phone-warning">
-          Saving replaces the connection URL. Update the Voicebot applet in
-          Exotel with the new URL after saving. Disabling blocks new inbound
+          Saving replaces the webhook URL. Update your Twilio number’s
+          incoming call webhook after saving. Disabling blocks new inbound
           sessions.
         </p>
         <ErrorNotice text={error} />
@@ -842,7 +842,7 @@ function CallReview({
   return (
     <Modal
       title="Review call outcome"
-      subtitle={`Verify the call to ${call.phone_number} in Exotel first.`}
+      subtitle={`Verify the call to ${call.phone_number} in Twilio first.`}
       onClose={() => {
         if (!busy) onClose();
       }}
@@ -850,11 +850,11 @@ function CallReview({
       <form onSubmit={save}>
         <p className="phone-description">
           The provider has not confirmed whether this call was placed. Link the
-          matching Exotel call, or confirm that no call was placed. This action
+          matching Twilio call, or confirm that no call was placed. This action
           will not dial again.
         </p>
         <label className="field">
-          Verified Exotel call ID
+          Verified Twilio call ID
           <input
             value={sid}
             onChange={(event) => setSid(event.target.value)}
@@ -871,7 +871,7 @@ function CallReview({
             onChange={(event) => setNotPlaced(event.target.checked)}
             disabled={busy}
           />
-          I checked Exotel and confirmed no call was placed.
+          I checked Twilio and confirmed no call was placed.
         </label>
         <ErrorNotice text={error} />
         <div className="modal-actions">

@@ -907,11 +907,11 @@ function CampaignDetails({
           <form className="outreach-confirm" onSubmit={reconcile}>
             <h3>Review call to {review.phone_number}</h3>
             <p className="phone-description">
-              Check Exotel, then link the verified call ID or confirm that no
+              Check Twilio, then link the verified call ID or confirm that no
               call was placed. This does not dial again.
             </p>
             <label className="field">
-              Verified Exotel call ID
+              Verified Twilio call ID
               <input
                 value={sid}
                 disabled={busy || notPlaced}
@@ -928,7 +928,7 @@ function CampaignDetails({
                 disabled={busy}
                 onChange={(e) => setNotPlaced(e.target.checked)}
               />
-              I verified in Exotel that no call was placed.
+              I verified in Twilio that no call was placed.
             </label>
             <div className="phone-actions">
               <button
@@ -991,7 +991,7 @@ function CampaignDetails({
                   {call.error && <p className="phone-warning">{call.error}</p>}
                   {call.provider_call_sid && (
                     <p className="phone-description">
-                      Exotel ID: {call.provider_call_sid}
+                      Twilio ID: {call.provider_call_sid}
                     </p>
                   )}
                   {call.status === "unknown" && canManage && (

@@ -7,6 +7,9 @@ import {
   ShieldCheck,
   Globe2,
   Sparkles,
+  Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ErrorNotice, Logo, Spinner, Wave } from "@/components/ui";
@@ -16,6 +19,7 @@ function LoginForm() {
   const [busy, setBusy] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const search = useSearchParams();
   async function tryDemo() {
@@ -80,10 +84,10 @@ function LoginForm() {
             from one workspace.
           </p>
           <div className="login-wave">
+            <div className="conversation-label"><span><AudioLines size={15} /> The Audiva experience</span><span className="sample-label">PREVIEW</span></div>
             <Wave />
-            <span>
-              <i /> Conversations that move work forward
-            </span>
+            <div className="conversation-message">“How can I help you today?”</div>
+            <div className="conversation-outcome"><span><Check size={13} /> A helpful answer.</span><span>A clear next step. <ArrowRight size={13} /></span></div>
           </div>
           <div className="login-features">
             <span>
@@ -149,11 +153,13 @@ function LoginForm() {
                 placeholder="you@company.com"
               />
             </label>
-            <label className="field">
-              Password
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <span className="password-control">
               <input
+                id="password"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 autoComplete={register ? "new-password" : "current-password"}
                 required
                 minLength={10}
@@ -162,7 +168,11 @@ function LoginForm() {
                   register ? "At least 10 characters" : "Enter your password"
                 }
               />
-            </label>
+              <button type="button" className="icon-button" aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+              </span>
+            </div>
             <ErrorNotice text={error} />
             <button className="button primary full" disabled={busy}>
               {busy && !demoBusy ? <Spinner /> : null}

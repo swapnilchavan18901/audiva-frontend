@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AudioLines,
   CalendarDays,
@@ -78,6 +78,36 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const sidebar = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!mobile) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    sidebar.current?.querySelector<HTMLButtonElement>(".mobile-only")?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobile(false);
+      if (event.key !== "Tab") return;
+      const controls = Array.from(sidebar.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), select:not(:disabled), summary',
+      ) || []).filter((element) => element.getClientRects().length > 0);
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+      menuButton.current?.focus();
+    };
+  }, [mobile]);
   async function addOrg(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -102,6 +132,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       {mobile && (
         <button
           className="nav-backdrop"
@@ -109,7 +140,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           onClick={() => setMobile(false)}
         />
       )}
-      <aside className={`sidebar ${mobile ? "open" : ""}`}>
+      <aside ref={sidebar} id="workspace-navigation" className={`sidebar ${mobile ? "open" : ""}`}>
         <div className="sidebar-brand">
           <Link href="/clinic" aria-label="Audiva home">
             <Logo />
@@ -215,8 +246,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <header className="topbar">
           <div className="breadcrumbs">
             <button
+              ref={menuButton}
               className="icon-button mobile-only"
               aria-label="Open navigation"
+              aria-expanded={mobile}
+              aria-controls="workspace-navigation"
               onClick={() => setMobile(true)}
             >
               <Menu size={20} />
@@ -247,7 +281,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </header>
-        <main key={w.org?.id || "loading"}>
+        <main id="main-content" tabIndex={-1} key={w.org?.id || "loading"}>
           {w.error ? (
             <div className="connection-error">
               <ErrorNotice text={w.error} />

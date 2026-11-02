@@ -206,7 +206,7 @@ Open **Healthcare → Phone calls** to select a clinic assistant, view incoming 
 outgoing calls, and start an outbound call. The existing browser voice preview stays
 available from this screen. Owners/admins can dial and review uncertain call outcomes;
 members can view history. Platform operators with workspace management access can
-assign the Exotel number, enable/disable its route, and copy its private connection URL.
+assign the Twilio number, enable/disable its route, and copy its private incoming call webhook URL.
 The backend `/phone/capabilities` endpoint supplies these permissions and service readiness.
 
 Outbound requests retain their identifier in session storage until acknowledged,
@@ -223,10 +223,10 @@ Owners and admins can save agents, create drafts, start or stop campaigns, and
 resolve calls awaiting review. Members can view agents, campaigns, and calls.
 
 Campaign creation only saves a draft. Starting a campaign explicitly confirms
-real phone calls through the backend's Exotel integration. Sequential mode calls
+real phone calls through the backend's Twilio integration. Sequential mode calls
 one contact at a time; parallel mode calls up to five. Campaigns and call results
 refresh every five seconds. Existing campaigns retain their original agent brief.
-The backend's Outreach migrations and Exotel configuration must be ready before
+The backend's Outreach migrations and Twilio configuration must be ready before
 starting calls. The frontend uses the existing `NEXT_PUBLIC_API_URL` and session.
 
 

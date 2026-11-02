@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useWorkspace } from "./workspace";
+import { AgentOverview } from "./agent-overview";
 import {
   CopyButton,
   Empty,
@@ -35,6 +36,17 @@ function kind(template?: Template) {
     : template?.slug.includes("sales")
       ? "sales"
       : "general";
+}
+function contextSummary(context: string) {
+  try {
+    const parsed: unknown = JSON.parse(context);
+    if (parsed && typeof parsed === "object" && "background" in parsed && typeof parsed.background === "string" && parsed.background.trim()) {
+      return parsed.background;
+    }
+  } catch {
+    // Free-form company context is already suitable for the card.
+  }
+  return context;
 }
 function BotEditor({
   bot,
@@ -238,11 +250,12 @@ export function Agents({
           )
         }
       />
+      <AgentOverview clinic={feature === "clinic"} count={bots.length} />
       <section className="agents-section">
         <div className="section-head">
           <div>
             <h2>
-              Your agents <span className="count-badge">{bots.length}</span>
+              {feature === "clinic" ? "Your assistants" : "Your agents"} <span className="count-badge">{bots.length}</span>
             </h2>
             <p>Personalized for your business. Ready for a conversation.</p>
           </div>
@@ -283,7 +296,7 @@ export function Agents({
                     {template?.name || "Unavailable template"}
                   </span>
                   <p className="agent-context">
-                    {bot.company_context ||
+                    {contextSummary(bot.company_context || "") ||
                       "Add your company details to make this agent feel like part of your team."}
                   </p>
                   <div className="agent-id">

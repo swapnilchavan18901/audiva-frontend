@@ -166,7 +166,7 @@ export type ClinicPhoneRoute = {
   bot_id: string;
   phone_number: string;
   enabled: boolean;
-  inbound_stream_url: string | null;
+  inbound_answer_url: string | null;
 };
 export type ClinicPhoneCall = {
   id: string;
