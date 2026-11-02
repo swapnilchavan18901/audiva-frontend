@@ -2,6 +2,7 @@ import { THEME_KEY, LEGACY_THEME_KEYS, PRODUCT_NAME } from "@/constants/constant
 import type { Metadata } from "next";
 import "./globals.css";
 import "./theme.css";
+import "./scrollbars.css";
 export const metadata: Metadata = {
   title: PRODUCT_NAME,
   description:

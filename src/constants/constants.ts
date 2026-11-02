@@ -16,6 +16,7 @@ export const CLINIC_PHONE_PAGE_SIZE = 20;
 export const TOAST_DURATION_MS = 4_000;
 export const LIVE_MEETING_STATUSES = [
   "starting",
+  "unknown",
   "joining",
   "waiting",
   "connected",

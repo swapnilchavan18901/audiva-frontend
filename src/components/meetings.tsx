@@ -6,7 +6,7 @@ import {
 } from "@/constants/constants";
 import { meetingDate } from "@/utils/format";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CalendarDays, Inbox, RefreshCw, ArrowUpRight } from "lucide-react";
 import {
   listMeetings,
@@ -75,28 +75,31 @@ function Pages({
   );
 }
 
-function JoinControls({ meeting }: { meeting: Meeting }) {
+function JoinControls({ meeting, onScheduleChange }: {
+  meeting: Meeting;
+  onScheduleChange: (meeting: Meeting) => void;
+}) {
   const w = useWorkspace();
-  const [connection, setConnection] = useState<MeetingConnection>({
-    status: "idle",
-    detail: "",
-  });
+  const [connection, setConnection] = useState<MeetingConnection | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const mutation = useRef(false);
+  const generation = useRef(0);
   const orgId = meeting.organization_id;
   const meetingId = meeting.id;
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     async function poll() {
+      const run = generation.current;
       try {
         const result = await getMeetingConnection(orgId, meetingId);
-        if (active) {
+        if (active && !mutation.current && run === generation.current) {
           setConnection(result);
           setError("");
         }
       } catch (e) {
-        if (active) setError(message(e));
+        if (active && !mutation.current && run === generation.current) setError(message(e));
       }
       if (active) timer = setTimeout(poll, MEETING_POLL_MS);
     }
@@ -107,6 +110,9 @@ function JoinControls({ meeting }: { meeting: Meeting }) {
     };
   }, [orgId, meetingId]);
   async function command(action: "join" | "leave") {
+    if (mutation.current) return;
+    mutation.current = true;
+    generation.current++;
     setBusy(true);
     setError("");
     try {
@@ -118,35 +124,43 @@ function JoinControls({ meeting }: { meeting: Meeting }) {
     } catch (e) {
       setError(message(e));
     } finally {
+      mutation.current = false;
+      generation.current++;
       setBusy(false);
     }
   }
   async function toggleAutoJoin() {
+    if (mutation.current) return;
+    mutation.current = true;
+    generation.current++;
     setBusy(true);
     try {
       const updated = await setMeetingAutoJoin(
         orgId,
         meetingId,
-        !(connection.auto_join ?? meeting.auto_join),
+        !(connection?.auto_join ?? meeting.auto_join),
       );
-      setConnection((previous) => ({
+      setConnection((previous) => previous ? ({
         ...previous,
         auto_join: updated.auto_join,
-      }));
+      }) : null);
+      onScheduleChange(updated);
       setError("");
     } catch (e) {
       setError(message(e));
     } finally {
+      mutation.current = false;
+      generation.current++;
       setBusy(false);
     }
   }
-  const active = LIVE_MEETING_STATUSES.includes(connection.status);
+  const active = !!connection && LIVE_MEETING_STATUSES.includes(connection.status);
   return (
     <div className="meeting-join-controls">
-      {connection.memory_error && (
+      {connection?.memory_error && (
         <ErrorNotice text={connection.memory_error} />
       )}
-      {connection.status !== "idle" && (
+      {connection && connection.status !== "idle" && (
         <div role="status" className="meeting-connection-status">
           <b>
             {connection.status === "connected"
@@ -165,11 +179,11 @@ function JoinControls({ meeting }: { meeting: Meeting }) {
         <button
           className={`button ${active ? "secondary" : "primary"}`}
           disabled={
-            busy ||
+            busy || !connection || !!error ||
             (!active &&
               (!w.manualJoinReady ||
                 meeting.status === "cancelled" ||
-                connection.can_join === false))
+                connection?.can_join !== true))
           }
           onClick={() => void command(active ? "leave" : "join")}
         >
@@ -178,12 +192,13 @@ function JoinControls({ meeting }: { meeting: Meeting }) {
         </button>
       )}
       {w.isOperator &&
+        connection &&
         !active &&
         meeting.status === "scheduled" &&
         (meeting.is_recurring || (meeting.ends_at && new Date(meeting.ends_at) > new Date())) && (
           <button
             className="button secondary small"
-            disabled={busy}
+            disabled={busy || !!error}
             onClick={() => void toggleAutoJoin()}
           >
             Auto-join:{" "}
@@ -192,7 +207,7 @@ function JoinControls({ meeting }: { meeting: Meeting }) {
         )}
       {w.isOperator && !w.manualJoinReady && (
         <small>
-          Meeting voice is not configured. Contact your workspace administrator to enable it.
+          Meeting voice is not configured. Contact your platform operator to enable it.
         </small>
       )}
       <ErrorNotice text={error} />
@@ -225,7 +240,7 @@ function Memory({ orgId }: { orgId: string }) {
     };
   }, [orgId]);
   return (
-    <section className="meeting-banner">
+    <section className="meeting-banner" id="workspace-memory">
       <div>
         <h3>Workspace memory · last 14 days</h3>
         <p>
@@ -233,9 +248,9 @@ function Memory({ orgId }: { orgId: string }) {
           decisions, or blockers.
         </p>
         <ErrorNotice text={error} />
-        <p style={{ whiteSpace: "pre-wrap" }}>
-          {data?.context || "No meeting memory yet."}
-        </p>
+        {!error && <p style={{ whiteSpace: "pre-wrap" }}>
+          {data ? (data.context || "No meeting memory yet.") : "Loading meeting memory…"}
+        </p>}
       </div>
     </section>
   );
@@ -279,7 +294,9 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
         title={testGround ? "Meeting preview" : "Meeting assistant"}
         description={
           testGround
-            ? "Open an assigned Google Meet and connect the assistant to try a conversation. Test calls use real meetings."
+            ? (w.isOperator
+              ? "Open an assigned Google Meet and connect the assistant to try a conversation. Preview sessions use real meetings."
+              : "Open an assigned Google Meet to try the assistant. A platform operator manages its connection. Preview sessions use real meetings.")
             : "Meeting schedules and agendas for your workspace."
         }
         action={
@@ -297,7 +314,10 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
         <div>
           <b>Your meeting voice assistant</b>
           <p>
-            Enable auto-join for scheduled meetings, or connect now. Admit Audiva
+            {w.isOperator
+              ? "Enable auto-join for scheduled meetings, or connect when joining is available. "
+              : "Your platform operator manages the assistant’s connection and auto-join settings. "}
+            Meeting voice uses English. Admit Audiva
             from the host account when requested. It listens quietly until you
             address it by name, for example “Hey {w.meetingVoiceName}, what did
             we decide?”
@@ -317,7 +337,7 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
               <Empty
                 icon={<CalendarDays />}
                 title="No meetings assigned yet"
-                description="Your platform operator can assign calendar events to this workspace."
+                description="Meetings from the connected calendar are matched by organizer email. Open Calendar inbox to assign meetings that need a workspace choice."
               />
             ) : (
               <div className="meeting-list">
@@ -338,11 +358,14 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
                         {item.status === "scheduled"
                           ? item.auto_join
                             ? "Scheduled · auto-join on"
-                            : "Scheduled · manual join"
+                          : "Scheduled · auto-join off"
                           : item.status.replaceAll("_", " ")}
                       </span>
                     </div>
-                    <JoinControls meeting={item} />
+                    <JoinControls
+                      meeting={item}
+                      onScheduleChange={(updated) => setItems((previous) => previous.map((meeting) => meeting.id === updated.id ? updated : meeting))}
+                    />
                     <button
                       className="button secondary"
                       onClick={() => setSelected(item)}
@@ -479,7 +502,9 @@ export function CalendarInbox() {
                 <h3>{status?.email || "Google account not connected"}</h3>
                 <p>
                   {status?.calendars.length
-                    ? `Last calendar sync: ${meetingDate(status.calendars[0].last_synced_at)}`
+                    ? `Last calendar sync: ${status.calendars.some((calendar) => calendar.last_synced_at)
+                      ? meetingDate(status.calendars.map((calendar) => calendar.last_synced_at).filter((value): value is string => !!value).sort().at(-1) || null)
+                      : "Not synced yet"}`
                     : "No calendar synced yet."}
                 </p>
                 {status?.status !== "connected" && (

@@ -183,6 +183,8 @@ function DailyList({ orgId, botId }: { orgId: string; botId: string }) {
                         />
                         {saving.includes(patient.id)
                           ? "Saving…"
+                          : patient.status === "cancelled"
+                            ? "Not applicable"
                           : patient.visited
                             ? "Done"
                             : "Pending"}

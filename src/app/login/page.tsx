@@ -12,6 +12,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { languages } from "@/constants/constants";
 import { ErrorNotice, Logo, Spinner, Wave } from "@/components/ui";
 import { login, loginDemo, register as registerAccount, message } from "@/lib/api";
 function LoginForm() {
@@ -91,7 +92,7 @@ function LoginForm() {
           </div>
           <div className="login-features">
             <span>
-              <Globe2 size={17} /> 11 Indian languages
+              <Globe2 size={17} /> {languages.length} languages for voice agents
             </span>
             <span>
               <AudioLines size={17} /> Real-time voice
@@ -193,7 +194,7 @@ function LoginForm() {
             </button>
           </div>
           <div className="auth-note">
-            <ShieldCheck size={16} /> Your workspace, securely connected.
+            <ShieldCheck size={16} /> Sign in to access your workspace.
           </div>
         </div>
         <small className="login-footer">

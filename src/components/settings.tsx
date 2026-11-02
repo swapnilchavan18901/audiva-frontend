@@ -142,7 +142,7 @@ export function Keys() {
         <div className="loading-state">
           <Spinner />
         </div>
-      ) : keys.length ? (
+      ) : error ? null : keys.length ? (
         <div className="table-card">
           <table>
             <thead>
@@ -440,7 +440,7 @@ export function Team() {
                 </td>
                 <td>
                   {member.role === "member"
-                    ? "View and test agents"
+                    ? "View workspace data and test agents"
                     : "Manage workspace resources"}
                 </td>
               </tr>
@@ -461,8 +461,9 @@ export function Team() {
           <Users size={20} />
           <h3>Members</h3>
           <p>
-            View the workspace and test its agents. No access to API-key
-            management.
+            View agents, patient registers, meetings, and campaigns, and test
+            voice agents. API keys and resource changes require an owner or admin;
+            meeting connection controls require a platform operator.
           </p>
         </div>
       </div>
@@ -495,8 +496,8 @@ export function Team() {
             <div className="inline-note">
               <Mail size={16} />
               <span>
-                You’ll receive an invitation token to share privately. Email
-                delivery is not connected yet.
+                You’ll receive an invitation token to share privately.
+                Audiva does not send invitation emails.
               </span>
             </div>
             <ErrorNotice text={error} />
@@ -549,7 +550,7 @@ export function Team() {
             </label>
             <p className="muted">
               You must be signed in with the email address the invitation was
-              sent to.
+              created for.
             </p>
             <ErrorNotice text={error} />
             <div className="modal-actions">
@@ -565,9 +566,11 @@ export function Team() {
 }
 export function Integration() {
   const w = useWorkspace();
-  const [selected, setSelected] = useState(w.bots[0]?.id || "");
+  const bots = [...w.features.clinic.bots, ...w.features.conversation.bots];
+  const [selection, setSelection] = useState("");
+  const selected = bots.find((bot) => bot.id === selection)?.id || bots[0]?.id || "";
   const platform = API_ORIGIN;
-  const bot = w.bots.find((b) => b.id === selected);
+  const bot = bots.find((b) => b.id === selected);
   const tokenCode = `// Run on YOUR server. Never expose this key to the browser.\nconst response = await fetch(\n  "${platform}/api/v1/public/bots/${selected || "YOUR_AGENT_ID"}/session-token",\n  {\n    method: "POST",\n    headers: { "X-API-Key": process.env.AUDIVA_API_KEY }\n  }\n);\nif (!response.ok) throw new Error("Token request failed");\nconst { token } = await response.json();\n// Return { token } from your own authenticated/rate-limited endpoint.`;
   const browserCode = `// First get a short-lived token from YOUR server.\nconst configResponse = await fetch(\n  "${platform}/api/v1/public/bots/${selected || "YOUR_AGENT_ID"}/webrtc/ice-servers",\n  { headers: { "Authorization": \`Bearer \${token}\` }, cache: "no-store" }\n);\nif (!configResponse.ok) throw new Error("Voice relay unavailable");\nconst { ice_servers } = await configResponse.json();\nconst pc = new RTCPeerConnection({ iceServers: ice_servers });\nconst stream = await navigator.mediaDevices.getUserMedia({ audio: true });\nstream.getTracks().forEach(track => pc.addTrack(track, stream));\npc.createDataChannel("pipecat");\nawait pc.setLocalDescription(await pc.createOffer());\nawait new Promise(resolve => {\n  if (pc.iceGatheringState === "complete") return resolve();\n  pc.addEventListener("icegatheringstatechange", function done() {\n    if (pc.iceGatheringState === "complete") {\n      pc.removeEventListener("icegatheringstatechange", done);\n      resolve();\n    }\n  });\n});\n// Register audio/data handlers and clean up tracks when the call ends.\nconst response = await fetch(\n  "${platform}/api/v1/public/bots/${selected || "YOUR_AGENT_ID"}/webrtc/offer",\n  {\n    method: "POST",\n    headers: {\n      "Authorization": \`Bearer \${token}\`,\n      "Content-Type": "application/json"\n    },\n    body: JSON.stringify(pc.localDescription)\n  }\n);\nif (!response.ok) throw new Error("WebRTC negotiation failed");\nconst { sdp, type, pc_id } = await response.json();\nawait pc.setRemoteDescription({ sdp, type });`;
   return (
@@ -581,7 +584,7 @@ export function Integration() {
         <div>
           <span>01</span>
           <b>Your server</b>
-          <small>Permanent API key</small>
+          <small>API key with an expiry date</small>
         </div>
         <ArrowRight />
         <div>
@@ -601,10 +604,10 @@ export function Integration() {
           Choose your agent
           <select
             value={selected}
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(e) => setSelection(e.target.value)}
           >
-            {!w.bots.length && <option value="">Create an agent first</option>}
-            {w.bots.map((b) => (
+            {!bots.length && <option value="">Create an agent first</option>}
+            {bots.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
@@ -663,8 +666,9 @@ export function Integration() {
         <span>
           Use HTTPS for microphone access. Configure TURN for production
           networks. A voice token can start only one call; request a new token
-          when retrying. Complete microphone setup is shown in the backend’s{" "}
-          <code>examples/embed.js</code>.
+          when retrying. This signaling outline also needs remote audio playback,
+          connection error handling, and cleanup. Use the public API reference
+          below for the session-stop endpoint.
         </span>
       </div>
       <a

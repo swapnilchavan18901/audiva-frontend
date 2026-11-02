@@ -1,0 +1,79 @@
+/* Shared native scrollbar styling for the page and every nested scroll area.
+   Keep scrolling, keyboard input, and touch momentum browser-managed. */
+:root {
+  --scrollbar-size: 10px;
+  --scrollbar-inset: 2px;
+  --scrollbar-thumb: #82788d80;
+  --scrollbar-thumb-hover: #6d617db3;
+  --scrollbar-thumb-active: #57309fcc;
+}
+
+:root[data-theme="dark"] {
+  --scrollbar-thumb: #b6a3c980;
+  --scrollbar-thumb-hover: #d0c2dfb3;
+  --scrollbar-thumb-active: #ddc8facc;
+}
+
+/* Preserve the operating system's contrast settings when forced colors are on. */
+@media (forced-colors: none) {
+  /* Firefox and other engines implementing the standard scrollbar properties. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+
+  /* Chromium, Edge, and Safari: use rounded thumbs and transparent tracks.
+     Non-auto standard properties override these pseudo-elements, so reset both
+     only in engines that support the pseudo-elements. */
+  @supports selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: auto;
+      scrollbar-color: auto;
+    }
+
+    *::-webkit-scrollbar {
+      width: var(--scrollbar-size);
+      height: var(--scrollbar-size);
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+      min-width: 32px;
+      min-height: 32px;
+      background-color: var(--scrollbar-thumb);
+      background-clip: padding-box;
+      border: var(--scrollbar-inset) solid transparent;
+      border-radius: 999px;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
+    }
+
+    *::-webkit-scrollbar-thumb:active {
+      background-color: var(--scrollbar-thumb-active);
+    }
+
+    *::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+}
+
+/* Keep the same slim visible thumb with a larger track on touch-first devices. */
+@media (pointer: coarse) {
+  :root {
+    --scrollbar-size: 12px;
+    --scrollbar-inset: 3px;
+  }
+}

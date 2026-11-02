@@ -273,7 +273,9 @@ export function Playground({
         title={
           feature === "clinic" ? "Clinic voice preview" : "Agent voice preview"
         }
-        description="Verify your agent’s responses, language, and business context before connecting it to customers."
+        description={feature === "clinic"
+          ? "Try the live clinic assistant. Confirmed bookings, reschedules, and cancellations update your clinic’s saved appointments."
+          : "Verify your agent’s responses, language, and business context before connecting it to customers."}
       />
       {!bots.length ? (
         <Empty

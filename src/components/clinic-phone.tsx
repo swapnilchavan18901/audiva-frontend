@@ -366,8 +366,8 @@ function PhoneWorkspace({
               </div>
               {!capabilities.can_view_route ? (
                 <p className="phone-description">
-                  Your workspace owner or admin manages the clinic number. You
-                  can view call history below.
+                  A platform operator assigns the clinic number. Workspace owners
+                  and admins can view its settings. You can view call history below.
                 </p>
               ) : route ? (
                 <>
@@ -435,7 +435,7 @@ function PhoneWorkspace({
               )}
               {!capabilities.inbound_ready && (
                 <p className="phone-warning">
-                  Phone service is not ready. Ask your administrator to check
+                  Phone service is not ready. Ask your platform operator to check
                   the backend configuration.
                 </p>
               )}
@@ -497,7 +497,7 @@ function PhoneWorkspace({
                   <p className="phone-description">
                     {capabilities.outbound_ready
                       ? "Starts a real phone call. Appointments are saved only after the patient confirms."
-                      : "Outbound calling is unavailable. Ask your administrator to check the Twilio configuration."}
+                      : "Outbound calling is unavailable. Ask your platform operator to check the Twilio configuration."}
                   </p>
                   {callResult && (
                     <p className="phone-call-result" role="status">

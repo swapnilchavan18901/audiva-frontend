@@ -89,7 +89,7 @@ function BotEditor({
       if (bot) await updateBot(w.org.id, bot.id, data);
       else await createBot(w.org.id, { ...data, template_id: selected });
       await w.refresh();
-      w.notify(bot ? "Agent updated" : "Your agent is ready to test");
+      w.notify(bot ? "Agent updated" : "Agent created");
       onClose();
     } catch (e) {
       setError(message(e));
@@ -257,7 +257,7 @@ export function Agents({
             <h2>
               {feature === "clinic" ? "Your assistants" : "Your agents"} <span className="count-badge">{bots.length}</span>
             </h2>
-            <p>Personalized for your business. Ready for a conversation.</p>
+            <p>Manage business context, language, and voice previews.</p>
           </div>
           <div className="search-box">
             <Search size={16} />
@@ -453,7 +453,7 @@ export function Templates() {
             </div>
             <div className="template-body">
               <div className="eyebrow">
-                {t.slug.includes("clinic")
+                {t.service_type === "clinic"
                   ? "HEALTHCARE"
                   : t.slug.includes("sales")
                     ? "SALES & GROWTH"
@@ -463,12 +463,15 @@ export function Templates() {
               <p>{t.description}</p>
               <div className="template-features">
                 <span>
-                  <Check size={13} /> Company context
+                  <Check size={13} /> {t.service_type === "clinic" ? "Clinic scheduling" : "Company context"}
                 </span>
                 <span>
-                  <Check size={13} /> 11 languages
+                  <Check size={13} /> {languages.length} languages
                 </span>
               </div>
+              {t.slug.includes("sales") && (
+                <p>This template answers website visitors. Create outbound campaigns in <Link className="text-link" href="/outreach">Sales outreach</Link>.</p>
+              )}
               <button
                 className="button secondary full"
                 disabled={!w.canManage}
@@ -480,26 +483,38 @@ export function Templates() {
           </article>
         ))}
       </div>
+      <div className="meeting-section-heading" style={{ marginTop: 32 }}>
+        <div>
+          <h2>Meeting workflows</h2>
+          <p className="muted">Built into your workspace. No agent template needed.</p>
+        </div>
+      </div>
       <div className="meeting-preview-grid">
         {[
           {
-            name: "Meeting Facilitator",
+            name: "Meeting assistant",
             description:
-              "Guide the agenda and capture decisions in Google Meet.",
+              "Open assigned Google Meet sessions and ask Audiva about the conversation. A platform operator manages the assistant’s connection.",
+            label: "Google Meet",
+            href: "/meetings",
+            action: "Open meetings",
           },
           {
-            name: "Founder Q&A",
+            name: "Workspace meeting memory",
             description:
-              "Ask questions across your meetings, with answers linked to their sources.",
+              "Review the last 14 days of meeting memory and ask Audiva about progress, decisions, or blockers.",
+            label: "Last 14 days",
+            href: "/meetings#workspace-memory",
+            action: "View meeting memory",
           },
         ].map((item) => (
           <article className="meeting-preview" key={item.name}>
-            <span className="status-pill">Coming soon</span>
+            <span className="status-pill">{item.label}</span>
             <h3>{item.name}</h3>
             <p>{item.description}</p>
-            <button className="button secondary" disabled>
-              Coming soon
-            </button>
+            <Link className="button secondary" href={item.href}>
+              {item.action} <ArrowRight size={16} />
+            </Link>
           </article>
         ))}
       </div>
@@ -513,8 +528,9 @@ export function Templates() {
       <div className="inline-note catalog-note">
         <LockKeyhole size={16} />
         <span>
-          Templates include platform-managed instructions. Booking, CRM, and
-          outbound calling require connected tools.
+          Clinic assistants use built-in appointment tools. General and sales
+          templates answer from company context without CRM integration. Phone
+          calls and outbound campaigns require configured telephony.
         </span>
       </div>
       {selected && (

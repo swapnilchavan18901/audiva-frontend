@@ -5,8 +5,8 @@ import { Wave } from "./ui";
 export function AgentOverview({ clinic, count }: { clinic: boolean; count: number }) {
   const shortcuts = clinic
     ? [
-        { href: "/patients", icon: Users, title: "Patient register", text: "Keep appointments and follow-ups in view." },
-        { href: "/clinic-phone", icon: Phone, title: "Phone calls", text: "Manage your number and review call history." },
+        { href: "/patients", icon: Users, title: "Patient register", text: "Review appointments and completed visits." },
+        { href: "/clinic-phone", icon: Phone, title: "Phone calls", text: "View phone settings and call history." },
         { href: "/clinic-preview", icon: Mic, title: "Try a conversation", text: "Hear your assistant in action." },
       ]
     : [
