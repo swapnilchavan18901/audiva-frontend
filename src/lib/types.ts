@@ -1,3 +1,5 @@
+import type { PhoneCallStatus } from "@/utils/phone";
+
 export type User = { id: string; email: string; name: string };
 export type Organization = { id: string; name: string };
 export type Member = { user_id: string; role: "owner" | "admin" | "member" };
@@ -173,17 +175,7 @@ export type ClinicPhoneCall = {
   bot_id: string;
   direction: "inbound" | "outbound";
   phone_number: string;
-  status:
-    | "dialing"
-    | "unknown"
-    | "queued"
-    | "ringing"
-    | "in-progress"
-    | "completed"
-    | "failed"
-    | "busy"
-    | "no-answer"
-    | "cancelled";
+  status: PhoneCallStatus;
   provider_call_sid: string | null;
   error: string | null;
   created_at: string;

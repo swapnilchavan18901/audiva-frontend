@@ -2,6 +2,13 @@
 
 Web application for the Audiva voice operations platform.
 
+## Quality checks
+
+Run `npm test` for phone validation and browser-preference regression tests,
+`npm run typecheck` for TypeScript validation, and `npm run build` for the production
+build. The utility tests use Node's built-in runner and the installed TypeScript
+compiler; no separate test framework is required.
+
 ## Architecture
 
 The frontend is a feature-oriented operating surface for clinic and meeting workflows. Business policy is centralized in the backend; React components consume prepared feature groups, capabilities, and operational state. The interface concentrates on configuration, live interaction, and reviewing outcomes.

@@ -1,4 +1,9 @@
 import { apiClient } from "@/utils/api-client";
+import type { PhoneCallStatus } from "@/utils/phone";
+import {
+  OUTREACH_CAMPAIGN_PAGE_SIZE,
+  OUTREACH_CALL_PAGE_SIZE,
+} from "@/constants/constants";
 
 export type SalesAgentInput = {
   name: string;
@@ -27,18 +32,7 @@ export type OutreachCall = {
   position: number;
   phone_number: string;
   name: string;
-  status:
-    | "pending"
-    | "dialing"
-    | "unknown"
-    | "queued"
-    | "ringing"
-    | "in-progress"
-    | "completed"
-    | "failed"
-    | "busy"
-    | "no-answer"
-    | "cancelled";
+  status: PhoneCallStatus | "pending";
   provider_call_sid: string | null;
   error: string | null;
   started_at: string | null;
@@ -71,7 +65,7 @@ export const listCampaigns = async (
 ) =>
   (
     await apiClient.get<Campaign[]>(`${path(org)}/campaigns`, {
-      params: { offset, limit: 21 },
+      params: { offset, limit: OUTREACH_CAMPAIGN_PAGE_SIZE + 1 },
       signal,
     })
   ).data;
@@ -88,7 +82,7 @@ export const listOutreachCalls = async (
 ) =>
   (
     await apiClient.get<OutreachCall[]>(`${campaignPath(org, id)}/calls`, {
-      params: { offset, limit: 51 },
+      params: { offset, limit: OUTREACH_CALL_PAGE_SIZE + 1 },
       signal,
     })
   ).data;

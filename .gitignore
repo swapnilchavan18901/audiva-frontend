@@ -5,7 +5,10 @@ node_modules/
 *.tsbuildinfo
 
 # Local verification and machine artifacts
-/tests/
+/tests/*
+!/tests/load-typescript.mjs
+!/tests/phone.test.mjs
+!/tests/storage.test.mjs
 coverage/
 .DS_Store
 *.log

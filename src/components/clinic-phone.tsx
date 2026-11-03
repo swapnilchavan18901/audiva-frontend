@@ -31,6 +31,7 @@ import type {
   ClinicPhoneCapabilities,
   ClinicPhoneRoute,
 } from "@/lib/types";
+import { normalizePhoneNumber, isValidPhoneNumber } from "@/utils/phone";
 import { meetingDate } from "@/utils/format";
 import {
   CopyButton,
@@ -59,9 +60,6 @@ type PendingCall = {
   request_id: string;
   callId?: string;
 };
-const normalizedPhone = (value: string) => value.replace(/[\s().-]/g, "");
-const validPhone = (value: string) =>
-  /^\+[1-9]\d{7,14}$/.test(normalizedPhone(value));
 
 export function ClinicPhone() {
   const w = useWorkspace();
@@ -179,7 +177,7 @@ function PhoneWorkspace({
       if (saved) {
         const data: PendingCall = JSON.parse(saved);
         if (
-          validPhone(data.phone_number) &&
+          isValidPhoneNumber(data.phone_number) &&
           typeof data.request_id === "string"
         ) {
           setPending(data);
@@ -283,7 +281,7 @@ function PhoneWorkspace({
     setDialError("");
     try {
       const attempt = pending || {
-        phone_number: normalizedPhone(phone),
+        phone_number: normalizePhoneNumber(phone),
         request_id: crypto.randomUUID(),
       };
       // Persist BEFORE sending: timeout/reload/retry must reuse the same attempt.
@@ -488,7 +486,7 @@ function PhoneWorkspace({
                       !restored ||
                       dialBusy ||
                       !capabilities.outbound_ready ||
-                      !validPhone(pending?.phone_number || phone)
+                      !isValidPhoneNumber(pending?.phone_number || phone)
                     }
                   >
                     {dialBusy ? <Spinner /> : <PhoneCall size={16} />}
@@ -650,7 +648,7 @@ function PhoneWorkspace({
       {confirmDial && (
         <Modal
           title={pending ? "Check previous call request" : "Call this patient?"}
-          subtitle={`${name} will speak with ${pending?.phone_number || normalizedPhone(phone)}.`}
+          subtitle={`${name} will speak with ${pending?.phone_number || normalizePhoneNumber(phone)}.`}
           onClose={() => {
             if (!dialBusy) setConfirmDial(false);
           }}
@@ -728,7 +726,7 @@ function RouteEditor({
     try {
       onSaved(
         await setClinicPhoneRoute(orgId, botId, {
-          phone_number: normalizedPhone(phone),
+          phone_number: normalizePhoneNumber(phone),
           enabled,
         }),
       );
@@ -790,7 +788,7 @@ function RouteEditor({
           </button>
           <button
             className="button primary"
-            disabled={busy || !validPhone(phone)}
+            disabled={busy || !isValidPhoneNumber(phone)}
           >
             {busy && <Spinner />}Save phone settings
           </button>

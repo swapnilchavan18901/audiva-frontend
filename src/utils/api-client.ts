@@ -6,6 +6,8 @@ import {
 } from "@/constants/constants";
 import axios from "axios";
 
+const AUTH_ENDPOINTS = new Set(["/auth/login", "/auth/demo", "/auth/register"]);
+
 class ApiError extends Error {
   constructor(
     message: string,
@@ -61,12 +63,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (
-    token &&
-    config.url !== "/auth/login" &&
-    config.url !== "/auth/demo" &&
-    config.url !== "/auth/register"
-  ) {
+  if (token && !AUTH_ENDPOINTS.has(config.url || "")) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }
   return config;
@@ -78,15 +75,12 @@ apiClient.interceptors.response.use(
     if (axios.isCancel(error)) return Promise.reject(error);
     if (!axios.isAxiosError(error)) return Promise.reject(error);
     const status = error.response?.status ?? 0;
+    const token = getAccessToken();
     if (
       status === 401 &&
       typeof window !== "undefined" &&
-      error.config?.url !== "/auth/login" &&
-      error.config?.url !== "/auth/demo" &&
-      error.config?.url !== "/auth/register" &&
-      (!getAccessToken() ||
-        error.config?.headers.get("Authorization") ===
-          `Bearer ${getAccessToken()}`)
+      !AUTH_ENDPOINTS.has(error.config?.url || "") &&
+      (!token || error.config?.headers.get("Authorization") === `Bearer ${token}`)
     ) {
       setAccessToken(null);
       window.dispatchEvent(new Event("auth-expired"));

@@ -13,6 +13,9 @@ export const MEETING_POLL_MS = 3_000;
 export const MEMORY_POLL_MS = 10_000;
 export const CLINIC_PHONE_POLL_MS = 5_000;
 export const CLINIC_PHONE_PAGE_SIZE = 20;
+export const OUTREACH_POLL_MS = 5_000;
+export const OUTREACH_CAMPAIGN_PAGE_SIZE = 20;
+export const OUTREACH_CALL_PAGE_SIZE = 50;
 export const TOAST_DURATION_MS = 4_000;
 export const LIVE_MEETING_STATUSES = [
   "starting",

@@ -12,7 +12,13 @@ import {
   TrendingUp,
   X,
 } from "lucide-react";
-import { languages } from "@/constants/constants";
+import {
+  languages,
+  OUTREACH_POLL_MS,
+  OUTREACH_CAMPAIGN_PAGE_SIZE,
+  OUTREACH_CALL_PAGE_SIZE,
+} from "@/constants/constants";
+import { normalizePhoneNumber, isValidPhoneNumber } from "@/utils/phone";
 import { message } from "@/lib/api";
 import {
   campaignAction,
@@ -135,7 +141,7 @@ function OutreachWorkspace({ orgId }: { orgId: string }) {
           setLoading(false);
           timer = setTimeout(() => {
             void load();
-          }, 5000);
+          }, OUTREACH_POLL_MS);
         }
       }
     };
@@ -255,7 +261,7 @@ function OutreachWorkspace({ orgId }: { orgId: string }) {
         ) : (
           <>
             <div className="meeting-list">
-              {campaigns.slice(0, 20).map((campaign) => (
+              {campaigns.slice(0, OUTREACH_CAMPAIGN_PAGE_SIZE).map((campaign) => (
                 <article className="meeting-row" key={campaign.id}>
                   <div className="phone-icon">
                     <Phone size={19} />
@@ -286,11 +292,11 @@ function OutreachWorkspace({ orgId }: { orgId: string }) {
                 description="Add contacts manually or upload a CSV, then review your draft before starting calls."
               />
             )}
-            {(offset > 0 || campaigns.length > 20) && (
+            {(offset > 0 || campaigns.length > OUTREACH_CAMPAIGN_PAGE_SIZE) && (
               <Pager
                 offset={offset}
-                size={20}
-                more={campaigns.length > 20}
+                size={OUTREACH_CAMPAIGN_PAGE_SIZE}
+                more={campaigns.length > OUTREACH_CAMPAIGN_PAGE_SIZE}
                 busy={loading}
                 onChange={setOffset}
               />
@@ -479,14 +485,12 @@ function CampaignEditor({
     if (busy) return;
     setError("");
     const normalized = contacts.map((row) => ({
-      phone_number: row.phone_number.replace(/[\s().-]/g, ""),
+      phone_number: normalizePhoneNumber(row.phone_number),
       name: row.name.trim(),
       context: row.context.trim(),
     }));
     if (source === "manual") {
-      if (
-        normalized.some((row) => !/^\+[1-9]\d{7,14}$/.test(row.phone_number))
-      ) {
+      if (normalized.some((row) => !isValidPhoneNumber(row.phone_number))) {
         setError(
           "Every contact needs a phone number with a country code, e.g. +919876543210.",
         );
@@ -742,7 +746,7 @@ function CampaignDetails({
           setLoading(false);
           timer = setTimeout(() => {
             void load();
-          }, 5000);
+          }, OUTREACH_POLL_MS);
         }
       }
     };
@@ -963,7 +967,7 @@ function CampaignDetails({
         ) : (
           <>
             <div className="outreach-calls">
-              {calls.slice(0, 50).map((call) => (
+              {calls.slice(0, OUTREACH_CALL_PAGE_SIZE).map((call) => (
                 <article className="outreach-call" key={call.id}>
                   <div className="outreach-row">
                     <div>
@@ -1016,8 +1020,8 @@ function CampaignDetails({
             )}
             <Pager
               offset={offset}
-              size={50}
-              more={calls.length > 50}
+              size={OUTREACH_CALL_PAGE_SIZE}
+              more={calls.length > OUTREACH_CALL_PAGE_SIZE}
               busy={loading || busy || !!confirm || !!review}
               onChange={setOffset}
             />

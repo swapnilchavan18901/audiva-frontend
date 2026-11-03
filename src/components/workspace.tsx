@@ -23,6 +23,7 @@ import {
   message,
 } from "@/lib/api";
 import { getAccessToken } from "@/utils/api-client";
+import { readPreference, writePreference } from "@/utils/storage";
 import { Logo, Spinner } from "./ui";
 import {
   Organization,
@@ -61,6 +62,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
   const refresh = useCallback(async () => {
     if (!getAccessToken()) {
+      generation.current++;
+      setUser(null);
+      setWorkspace(null);
       router.replace("/login");
       return;
     }
@@ -73,7 +77,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         listOrganizations(),
         getMeetingCapabilities(),
       ]);
-      const preferred = selected.current || localStorage.getItem(WORKSPACE_KEY) || LEGACY_WORKSPACE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
+      const preferred =
+        selected.current || readPreference(WORKSPACE_KEY, LEGACY_WORKSPACE_KEYS);
       const id =
         organizations.find((o) => o.id === preferred)?.id ||
         organizations[0]?.id ||
@@ -89,7 +94,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       );
       setOrgs(organizations);
       setWorkspace(data);
-      if (id) localStorage.setItem(WORKSPACE_KEY, id);
+      if (id) writePreference(WORKSPACE_KEY, id);
     } catch (e) {
       if (run === generation.current) setError(message(e));
     } finally {
@@ -98,6 +103,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
   useEffect(() => {
     void refresh();
+    return () => {
+      generation.current++;
+    };
   }, [refresh]);
   useEffect(() => {
     if (!toast) return;
