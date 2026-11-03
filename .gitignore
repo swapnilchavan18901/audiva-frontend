@@ -9,6 +9,7 @@ node_modules/
 !/tests/load-typescript.mjs
 !/tests/phone.test.mjs
 !/tests/storage.test.mjs
+!/tests/retry.test.mjs
 coverage/
 .DS_Store
 *.log

@@ -84,6 +84,7 @@ export type AuthResponse = {
   token_type: string;
   user: User;
 };
+export type AuthOptions = { registration_enabled: boolean; demo_enabled: boolean };
 
 export type ClinicPatient = {
   id: string;

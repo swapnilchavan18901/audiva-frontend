@@ -3,6 +3,7 @@ import { apiClient, setAccessToken } from "@/utils/api-client";
 import type {
   ApiKey,
   AuthResponse,
+  AuthOptions,
   Bot,
   CalendarEvent,
   CalendarStatus,
@@ -37,6 +38,9 @@ export async function login(data: { email: string; password: string }) {
     .data;
   setAccessToken(response.access_token);
   return response;
+}
+export async function getAuthOptions() {
+  return (await apiClient.get<AuthOptions>("/auth/options")).data;
 }
 export async function loginDemo() {
   const response = (await apiClient.post<AuthResponse>("/auth/demo")).data;

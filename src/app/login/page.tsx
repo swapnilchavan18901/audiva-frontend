@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -14,15 +14,27 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { languages } from "@/constants/constants";
 import { ErrorNotice, Logo, Spinner, Wave } from "@/components/ui";
-import { login, loginDemo, register as registerAccount, message } from "@/lib/api";
+import { login, loginDemo, getAuthOptions, register as registerAccount, message } from "@/lib/api";
+import type { AuthOptions } from "@/lib/types";
 function LoginForm() {
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [authOptions, setAuthOptions] = useState<AuthOptions | null>(null);
+  const [optionsError, setOptionsError] = useState("");
   const router = useRouter();
   const search = useSearchParams();
+  useEffect(() => {
+    let active = true;
+    getAuthOptions().then((options) => {
+      if (active) setAuthOptions(options);
+    }).catch((error) => {
+      if (active) setOptionsError(message(error));
+    });
+    return () => { active = false; };
+  }, []);
   async function tryDemo() {
     if (busy) return;
     setBusy(true);
@@ -117,7 +129,8 @@ function LoginForm() {
               Your session expired. Please sign in again.
             </div>
           )}
-          <div className="auth-demo">
+          <ErrorNotice text={optionsError} />
+          {authOptions?.demo_enabled && <div className="auth-demo">
             <button
               type="button"
               className="button secondary full"
@@ -129,7 +142,7 @@ function LoginForm() {
               <ArrowRight size={17} />
             </button>
             <p>No signup required.</p>
-          </div>
+          </div>}
           <form onSubmit={submit}>
             {register && (
               <label className="field">
@@ -181,7 +194,7 @@ function LoginForm() {
               <ArrowRight size={17} />
             </button>
           </form>
-          <div className="auth-switch">
+          {authOptions?.registration_enabled && <div className="auth-switch">
             {register ? "Already have an account?" : "New to Audiva?"}{" "}
             <button
               disabled={busy}
@@ -192,7 +205,7 @@ function LoginForm() {
             >
               {register ? "Sign in" : "Create an account"}
             </button>
-          </div>
+          </div>}
           <div className="auth-note">
             <ShieldCheck size={16} /> Sign in to access your workspace.
           </div>

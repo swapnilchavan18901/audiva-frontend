@@ -5,6 +5,7 @@ import {
   LEGACY_TOKEN_KEYS,
 } from "@/constants/constants";
 import axios from "axios";
+import { retryAfterSeconds } from "./retry";
 
 const AUTH_ENDPOINTS = new Set(["/auth/login", "/auth/demo", "/auth/register"]);
 
@@ -86,6 +87,11 @@ apiClient.interceptors.response.use(
       window.dispatchEvent(new Event("auth-expired"));
     }
     const detail: unknown = error.response?.data?.detail;
+    const retryAfter = retryAfterSeconds(error.response?.headers["retry-after"]);
+    const requestId: unknown = error.response?.headers["x-request-id"];
+    const supportReference = status >= 500 && typeof requestId === "string" && /^[a-f0-9]{32}$/.test(requestId)
+      ? ` Reference: ${requestId}.`
+      : "";
     const validation = Array.isArray(detail)
       ? detail
           .flatMap((item) =>
@@ -93,15 +99,25 @@ apiClient.interceptors.response.use(
           )
           .join(", ")
       : "";
+    const uncertainWrite = status === 0 &&
+      !AUTH_ENDPOINTS.has(error.config?.url || "") &&
+      ["post", "put", "patch", "delete"].includes(error.config?.method?.toLowerCase() || "");
+    const retryAdvice = uncertainWrite
+      ? " Refresh to check whether the action completed before trying again."
+      : " Please try again.";
     const fallback =
       error.code === "ECONNABORTED" || error.code === "ETIMEDOUT"
-        ? "The request timed out. Please try again."
+        ? "The request timed out." + retryAdvice
         : status === 0
-          ? "Cannot connect to the server. Please try again."
+          ? "Cannot connect to the server." + retryAdvice
           : "Something went wrong. Please try again.";
     return Promise.reject(
       new ApiError(
-        typeof detail === "string" ? detail : validation || fallback,
+        status === 429
+          ? (retryAfter !== null
+            ? `Too many requests. Please try again in ${Math.max(1, retryAfter)} seconds.`
+            : "Too many requests. Please wait a moment before trying again.")
+          : (typeof detail === "string" ? detail : validation || fallback) + supportReference,
         status,
       ),
     );

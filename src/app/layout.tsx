@@ -5,6 +5,7 @@ import "./theme.css";
 import "./scrollbars.css";
 export const metadata: Metadata = {
   title: PRODUCT_NAME,
+  robots: { index: false, follow: false },
   description:
     "Audiva brings voice agents, meeting assistance, and customer outreach into one business platform.",
 };
