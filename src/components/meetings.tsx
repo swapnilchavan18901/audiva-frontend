@@ -166,8 +166,6 @@ function JoinControls({ meeting, onScheduleChange }: {
     : !w.manualJoinReady ? "Meeting voice is not configured. Contact your platform operator."
     : meeting.status === "cancelled" ? "This meeting has been cancelled."
     : !meeting.next_starts_at || !meeting.next_ends_at ? "No upcoming session is available."
-    : new Date(meeting.next_starts_at).getTime() > Date.now() + 10 * 60 * 1000
-      ? "The assistant can join from 10 minutes before the start."
     : new Date(meeting.next_ends_at).getTime() <= Date.now() ? "This meeting has ended."
     : !connection.can_join && !active ? "The assistant has already been requested for this session."
     : "";
