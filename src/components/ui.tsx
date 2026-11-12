@@ -64,9 +64,11 @@ export function Modal({
   subtitle,
   children,
   onClose,
+  className,
 }: {
   title: string;
   subtitle?: string;
+  className?: string;
   children: React.ReactNode;
   onClose: () => void;
 }) {
@@ -81,7 +83,7 @@ export function Modal({
     <dialog
       ref={ref}
       aria-labelledby={titleId}
-      className="modal"
+      className={["modal", className].filter(Boolean).join(" ")}
       onCancel={(e) => {
         e.preventDefault();
         onClose();

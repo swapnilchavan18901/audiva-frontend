@@ -759,3 +759,45 @@ h2, h3, h4 { font-weight: 600; }
   .workflow-shortcut p, .workflow-shortcut .shortcut-arrow { display: none; }
   .shortcut-icon { width: 30px; height: 30px; border-radius: 8px; }
 }
+
+/* Calendar assignment: a focused meeting summary and an accessible join preference. */
+.modal.assignment-modal { width: min(580px, calc(100vw - 32px)); padding: 24px; }
+.modal.assignment-modal[open] { display: flex; flex-direction: column; overflow: hidden; }
+.assignment-form { min-height: 0; overflow: auto; padding: 2px; }
+.assignment-modal .modal-head { flex-shrink: 0; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.assignment-modal .modal-head p { font-size: 13px; line-height: 1.6; max-width: 390px; }
+.assignment-meeting-summary { display: flex; gap: 14px; align-items: flex-start; padding: 14px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 18px; }
+.assignment-summary-icon { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: var(--accent-soft); color: var(--accent-text); }
+.assignment-meeting-summary h3 { font-size: 16px; line-height: 1.4; overflow-wrap: anywhere; margin: 0 0 6px; }
+.assignment-meeting-summary p { font-size: 13px; color: var(--secondary); line-height: 1.6; margin: 0; }
+.assignment-meeting-summary span { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--accent-text); margin-top: 8px; }
+.assignment-workspace > span:first-child { display: flex; align-items: center; gap: 7px; }
+.assignment-form .field { margin-bottom: 16px; }
+.assignment-form select, .assignment-form textarea { background: var(--paper); border-color: var(--line-strong); }
+.assignment-form textarea { min-height: 90px; }
+.assignment-optional { margin-left: 6px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.assignment-auto-join { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line-strong); border-radius: 12px; padding: 16px; background: var(--surface-subtle); }
+.assignment-auto-icon { display: grid; place-items: center; color: var(--accent-text); flex-shrink: 0; }
+.assignment-auto-join > div:nth-child(2) { flex: 1; min-width: 0; }
+.assignment-auto-join label { font-size: 13px; font-weight: 600; cursor: pointer; }
+.assignment-auto-join p { font-size: 12px; line-height: 1.6; color: var(--secondary); margin: 4px 0 0; }
+.assignment-switch { appearance: none; position: relative; width: 40px; height: 24px; flex: 0 0 40px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--line-strong); cursor: pointer; transition: background .15s; }
+.assignment-switch::before { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 3px #0003; transition: transform .15s; }
+.assignment-switch:checked { background: var(--accent); border-color: var(--accent); }
+.assignment-switch:checked::before { transform: translateX(16px); background: white; }
+.assignment-switch:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
+.assignment-switch:disabled { cursor: wait; opacity: .6; }
+.assignment-sharing-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 16px; color: var(--secondary); }
+.assignment-sharing-note svg { flex-shrink: 0; margin-top: 2px; }
+.assignment-sharing-note p { margin: 0; font-size: 12px; line-height: 1.7; }
+.assignment-modal .modal-actions { position: sticky; bottom: 0; background: var(--paper); padding-block: 14px 2px; margin-top: 18px; }
+.meeting-control-actions, .calendar-event-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.calendar-event-actions { justify-content: flex-end; }
+@media (max-width: 650px) {
+  .modal.assignment-modal { width: calc(100vw - 24px); padding: 20px; }
+  .assignment-meeting-summary { padding: 14px; gap: 10px; }
+  .assignment-auto-join { padding: 14px; }
+  .assignment-modal .modal-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .assignment-modal .modal-actions .button { justify-content: center; padding-inline: 10px; }
+  .calendar-event-actions { width: 100%; justify-content: flex-start; }
+}

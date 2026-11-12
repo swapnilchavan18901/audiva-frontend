@@ -45,6 +45,7 @@ export type Meeting = {
   next_meet_url: string | null;
 };
 export type CalendarEvent = {
+  organization_id: string | null;
   id: string;
   recurring_event_id: string | null;
   title: string | null;
@@ -68,6 +69,7 @@ export type MeetingCapabilities = {
   voice_name: string;
 };
 export type MeetingConnection = {
+  can_control?: boolean;
   status: string;
   detail: string;
   voice_state?: "disconnected" | "listening" | "thinking" | "speaking";

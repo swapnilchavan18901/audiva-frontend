@@ -7,7 +7,8 @@ import {
 import { meetingDate } from "@/utils/format";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarDays, Inbox, RefreshCw, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, Inbox, RefreshCw, ArrowUpRight, Building2, Bot, ShieldCheck, Repeat2 } from "lucide-react";
 import {
   listMeetings,
   getMeetingConnection,
@@ -159,6 +160,17 @@ function JoinControls({ meeting, onScheduleChange }: {
     }
   }
   const active = !!connection && LIVE_MEETING_STATUSES.includes(connection.status);
+  const canControl = connection?.can_control === true;
+  const joinHint = !connection ? "Checking meeting availability…"
+    : !canControl ? "The calendar owner or a workspace admin can control the assistant."
+    : !w.manualJoinReady ? "Meeting voice is not configured. Contact your platform operator."
+    : meeting.status === "cancelled" ? "This meeting has been cancelled."
+    : !meeting.next_starts_at || !meeting.next_ends_at ? "No upcoming session is available."
+    : new Date(meeting.next_starts_at).getTime() > Date.now() + 10 * 60 * 1000
+      ? "The assistant can join from 10 minutes before the start."
+    : new Date(meeting.next_ends_at).getTime() <= Date.now() ? "This meeting has ended."
+    : !connection.can_join && !active ? "The assistant has already been requested for this session."
+    : "";
   return (
     <div className="meeting-join-controls">
       {connection?.memory_error && (
@@ -179,11 +191,12 @@ function JoinControls({ meeting, onScheduleChange }: {
           {connection.voice_error && <span>{connection.voice_error}</span>}
         </div>
       )}
-      {w.isOperator && (
+      <div className="meeting-control-actions">
+        <MeetLink url={meeting.next_meet_url ?? meeting.meet_url} />
         <button
           className={`button ${active ? "secondary" : "primary"}`}
           disabled={
-            busy || !connection || !!error ||
+            busy || !canControl || !connection || !!error ||
             (!active &&
               (!w.manualJoinReady ||
                 meeting.status === "cancelled" ||
@@ -192,10 +205,11 @@ function JoinControls({ meeting, onScheduleChange }: {
           onClick={() => void command(active ? "leave" : "join")}
         >
           {busy && <Spinner />}
-          {active ? "Disconnect agent" : "Connect voice agent"}
+          {active ? "Remove assistant" : "Join with Audiva"}
         </button>
-      )}
-      {w.isOperator &&
+      </div>
+      {joinHint && <small>{joinHint}</small>}
+      {canControl &&
         connection &&
         !active &&
         meeting.status === "scheduled" &&
@@ -209,11 +223,6 @@ function JoinControls({ meeting, onScheduleChange }: {
             {(connection.auto_join ?? meeting.auto_join) ? "on" : "off"}
           </button>
         )}
-      {w.isOperator && !w.manualJoinReady && (
-        <small>
-          Meeting voice is not configured. Contact your platform operator to enable it.
-        </small>
-      )}
       <ErrorNotice text={error} />
     </div>
   );
@@ -298,9 +307,7 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
         title={testGround ? "Meeting preview" : "Meeting assistant"}
         description={
           testGround
-            ? (w.isOperator
-              ? "Open an assigned Google Meet and connect the assistant to try a conversation. Preview sessions use real meetings."
-              : "Open an assigned Google Meet to try the assistant. A platform operator manages its connection. Preview sessions use real meetings.")
+            ? "Open an assigned Google Meet and join with Audiva to try a conversation. Preview sessions use real meetings."
             : "Meeting schedules and agendas for your workspace."
         }
         action={
@@ -318,9 +325,8 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
         <div>
           <b>Your meeting voice assistant</b>
           <p>
-            {w.isOperator
-              ? "Enable auto-join for scheduled meetings, or connect when joining is available. "
-              : "Your platform operator manages the assistant’s connection and auto-join settings. "}
+            Open Meet to join yourself, or choose Join with Audiva to send the assistant.
+            Calendar owners and workspace admins can manage the assistant and auto-join. {" "}
             Meeting voice uses English. Admit Audiva
             from the host account when requested. It listens quietly until you
             address it by name, for example “Hey {w.meetingVoiceName}, what did
@@ -341,7 +347,7 @@ export function Meetings({ testGround = false }: { testGround?: boolean }) {
               <Empty
                 icon={<CalendarDays />}
                 title="No meetings assigned yet"
-                description="Meetings from the connected calendar are matched by organizer email. Open Calendar inbox to assign meetings that need a workspace choice."
+                description="Connect your Google Calendar in Calendar inbox, then add a meeting to this workspace."
               />
             ) : (
               <div className="meeting-list">
@@ -616,7 +622,16 @@ export function CalendarInbox() {
                         <span className="status-pill">No Google Meet link</span>
                       )}
                     </div>
-                    {item.meeting_id ? <span className="status-pill green">Assigned</span> : <button
+                    <div className="calendar-event-actions">
+                      <MeetLink url={item.meet_url} />
+                    {item.meeting_id ? <>
+                      <span className="status-pill green">Assigned</span>
+                      {item.organization_id && orgs.some((org) => org.id === item.organization_id) && (
+                        <Link className="button secondary small" href="/meetings" onClick={() => w.selectOrg(item.organization_id!)}>
+                          Manage assistant <ArrowUpRight size={14} />
+                        </Link>
+                      )}
+                    </> : <button
                       className="button primary"
                       disabled={
                         !item.meet_url || !item.starts_at || !item.ends_at || connectionBusy
@@ -631,6 +646,7 @@ export function CalendarInbox() {
                     >
                       Assign workspace
                     </button>}
+                    </div>
                   </article>
                 ))}
               </div>
@@ -645,66 +661,54 @@ export function CalendarInbox() {
       )}
       {selected && (
         <Modal
-          title="Assign meeting"
-          subtitle={selected.title || "Untitled event"}
+          className="assignment-modal"
+          title="Add to workspace"
+          subtitle="Give your meeting a home and choose how Audiva joins."
           onClose={() => !saving && setSelected(null)}
         >
-          <form onSubmit={assign}>
-            <p className="meeting-assignment-note">
-              Workspace members will be able to see this meeting’s title,
-              schedule, link, and agenda. Enable auto-join to send the assistant
-              at the scheduled start time.
-            </p>
-            <label className="field">
-              Your workspace
-              <select
-                required
-                value={orgId}
-                onChange={(e) => setOrgId(e.target.value)}
-              >
-                <option value="">Choose one of your workspaces</option>
-                {orgs.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
+          <form className="assignment-form" onSubmit={assign}>
+            <div className="assignment-meeting-summary">
+              <div className="assignment-summary-icon"><CalendarDays size={24} /></div>
+              <div>
+                <h3>{selected.title || "Untitled meeting"}</h3>
+                <p>{meetingDate(selected.starts_at)}</p>
+                {selected.recurring_event_id && <span><Repeat2 size={13} /> Recurring meeting</span>}
+              </div>
+            </div>
+            <label className="field assignment-workspace">
+              <span><Building2 size={16} /> Workspace</span>
+              <select required value={orgId} onChange={(e) => setOrgId(e.target.value)} disabled={saving}>
+                <option value="">Choose a workspace</option>
+                {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
               </select>
+              <span className="field-hint">Members of this workspace will have access to the meeting.</span>
             </label>
             <label className="field">
-              Agenda (optional)
-              <textarea
-                rows={4}
-                maxLength={20000}
-                value={agenda}
+              <span>Meeting agenda <span className="assignment-optional">Optional</span></span>
+              <textarea rows={3} maxLength={20000} value={agenda} disabled={saving}
                 onChange={(e) => setAgenda(e.target.value)}
-                placeholder="What should this meeting cover?"
-              />
+                placeholder="What are we discussing? Add context for your assistant." />
             </label>
-            <label className="field">
-              <span>
-                <input
-                  type="checkbox"
-                  checked={autoJoin}
-                  onChange={(e) => setAutoJoin(e.target.checked)}
-                />{" "}
-                Join automatically at the scheduled start
-              </span>
-            </label>
-            {selected.recurring_event_id && (
-              <p>This assigns the recurring meeting and all future sessions to this workspace.</p>
-            )}
+            <div className="assignment-auto-join">
+              <div className="assignment-auto-icon"><Bot size={21} /></div>
+              <div id="auto-join-description">
+                <label htmlFor="assignment-auto-join">Join automatically</label>
+                <p>{autoJoin ? "Audiva will join at the scheduled start." : "You can send Audiva from the Meetings page."}</p>
+              </div>
+              <input id="assignment-auto-join" className="assignment-switch" type="checkbox" role="switch"
+                aria-describedby="auto-join-description" checked={autoJoin} disabled={saving}
+                onChange={(e) => setAutoJoin(e.target.checked)} />
+            </div>
+            <div className="assignment-sharing-note">
+              <ShieldCheck size={17} />
+              <p>Shares the meeting title, schedule, link, and agenda with this workspace.
+                {selected.recurring_event_id && " Future sessions in this recurring series will use the same workspace."}</p>
+            </div>
             <ErrorNotice text={formError} />
             <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                disabled={saving}
-                onClick={() => setSelected(null)}
-              >
-                Cancel
-              </button>
+              <button type="button" className="button secondary" disabled={saving} onClick={() => setSelected(null)}>Cancel</button>
               <button className="button primary" disabled={saving || !orgId}>
-                {saving && <Spinner />}Assign meeting
+                {saving ? <Spinner /> : <Building2 size={16} />}{saving ? "Adding meeting…" : "Add to workspace"}
               </button>
             </div>
           </form>
