@@ -144,12 +144,26 @@ export async function leaveMeeting(orgId: string, meetingId: string) {
   ).data;
 }
 export async function getCalendarStatus() {
-  return (await apiClient.get<CalendarStatus>("/operator/meeting-calendar"))
+  return (await apiClient.get<CalendarStatus>("/calendar/status"))
     .data;
+}
+export async function connectCalendar(redirectUri: string) {
+  return (await apiClient.post<{ authorization_url: string; state: string }>(
+    "/calendar/connect", { redirect_uri: redirectUri },
+  )).data;
+}
+export async function finishCalendarConnection(code: string, state: string) {
+  return (await apiClient.post("/calendar/callback", { code, state })).data;
+}
+export async function syncCalendar() {
+  return (await apiClient.post("/calendar/sync", {}, { timeout: 120000 })).data;
+}
+export async function disconnectCalendar() {
+  await apiClient.delete("/calendar/connection");
 }
 export async function listCalendarEvents(offset = 0) {
   return (
-    await apiClient.get<CalendarEvent[]>("/operator/meeting-events", {
+    await apiClient.get<CalendarEvent[]>("/calendar/events", {
       params: { offset },
     })
   ).data;
@@ -169,7 +183,7 @@ export async function assignCalendarEvent(
 ) {
   return (
     await apiClient.post<Meeting>(
-      `/operator/meeting-events/${encodeURIComponent(eventId)}/assign`,
+      `/calendar/events/${encodeURIComponent(eventId)}/assign`,
       data,
     )
   ).data;

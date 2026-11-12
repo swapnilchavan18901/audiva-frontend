@@ -55,6 +55,7 @@ export type CalendarEvent = {
   meeting_id: string | null;
 };
 export type CalendarStatus = {
+  configured: boolean;
   identity_ready: boolean;
   status: string;
   email: string | null;

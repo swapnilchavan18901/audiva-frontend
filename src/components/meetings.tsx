@@ -14,6 +14,10 @@ import {
   joinMeeting,
   leaveMeeting,
   getCalendarStatus,
+  connectCalendar,
+  finishCalendarConnection,
+  syncCalendar,
+  disconnectCalendar,
   listCalendarEvents,
   listAssignableOrganizations,
   assignCalendarEvent,
@@ -414,7 +418,64 @@ export function CalendarInbox() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [connectionBusy, setConnectionBusy] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
+  const callbackStarted = useRef(false);
   const refresh = useCallback(() => setRevision((n) => n + 1), []);
+  useEffect(() => {
+    if (!w.user || callbackStarted.current) return;
+    const query = new URLSearchParams(window.location.search);
+    if (!query.has("state") && !query.has("code") && !query.has("error")) return;
+    callbackStarted.current = true;
+    const state = query.get("state");
+    const code = query.get("code");
+    const pending = sessionStorage.getItem("audiva-calendar-oauth");
+    sessionStorage.removeItem("audiva-calendar-oauth");
+    // Remove the authorization code before making requests or opening other links.
+    window.history.replaceState(null, "", window.location.pathname);
+    if (!state || pending !== `${w.user.id}:${state}`) {
+      setConnectionError("Calendar authorization did not match this browser session. Connect again.");
+      return;
+    }
+    if (query.has("error") || !code) {
+      setConnectionError("Google Calendar connection was cancelled or declined. You can try again.");
+      return;
+    }
+    setConnectionBusy(true);
+    finishCalendarConnection(code, state)
+      .then(async () => {
+        w.notify("Google Calendar connected");
+        await syncCalendar();
+      })
+      .catch((e) => setConnectionError(message(e)))
+      .finally(() => { setConnectionBusy(false); refresh(); });
+  }, [w.user, w.notify, refresh]);
+  async function connect() {
+    setConnectionBusy(true);
+    setConnectionError("");
+    try {
+      const result = await connectCalendar(`${window.location.origin}/calendar-inbox`);
+      sessionStorage.setItem("audiva-calendar-oauth", `${w.user?.id}:${result.state}`);
+      window.location.assign(result.authorization_url);
+    } catch (e) {
+      setConnectionError(message(e));
+      setConnectionBusy(false);
+    }
+  }
+  async function manageConnection(action: "sync" | "disconnect") {
+    setConnectionBusy(true);
+    setConnectionError("");
+    try {
+      if (action === "sync") await syncCalendar();
+      else await disconnectCalendar();
+      setOffset(0);
+    } catch (e) {
+      setConnectionError(message(e));
+    } finally {
+      setConnectionBusy(false);
+      refresh();
+    }
+  }
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -467,11 +528,11 @@ export function CalendarInbox() {
       <PageTitle
         eyebrow="YOUR CALENDAR"
         title="Calendar inbox"
-        description="Your meetings are matched by organizer email. Choose from your own workspaces when needed."
+        description="Connect your Google account to see your organized and invited meetings. Share meetings with a workspace when you choose."
         action={
           <button
             className="button secondary"
-            disabled={loading}
+            disabled={loading || connectionBusy}
             onClick={refresh}
           >
             <RefreshCw size={16} /> Refresh view
@@ -479,10 +540,10 @@ export function CalendarInbox() {
         }
       />
       <ErrorNotice text={error} />
-      {status && !status.identity_ready && (
+      <ErrorNotice text={connectionError} />
+      {status && !status.configured && (
         <div className="notice">
-          Your calendar email needs to be linked to your account. Contact your
-          platform operator to enable your private inbox.
+          Google Calendar setup is pending. The platform operator needs to configure the Google OAuth app.
         </div>
       )}
       {loading ? (
@@ -507,27 +568,39 @@ export function CalendarInbox() {
                       : "Not synced yet"}`
                     : "No calendar synced yet."}
                 </p>
-                {status?.status !== "connected" && (
-                  <p>
-                    Ask the deployment operator to reconnect the Google account.
-                  </p>
-                )}
+                <p>Use your own Google email, even if it differs from your Audiva login. Calendar access is read-only.</p>
+                <div className="calendar-connection-actions">
+                  {status?.status !== "connected" && (
+                    <button className="button primary" disabled={connectionBusy || !status?.configured} onClick={connect}>
+                      {connectionBusy ? "Connecting…" : status?.status === "reauth_required" ? "Reconnect Google Calendar" : "Connect Google Calendar"}
+                    </button>
+                  )}
+                  {status?.status === "connected" && (
+                    <button className="button secondary" disabled={connectionBusy} onClick={() => manageConnection("sync")}>
+                      <RefreshCw size={16} /> {connectionBusy ? "Updating…" : "Sync calendar"}
+                    </button>
+                  )}
+                  {status?.identity_ready && (
+                    <button className="button secondary" disabled={connectionBusy} onClick={() => manageConnection("disconnect")}>
+                      Disconnect
+                    </button>
+                  )}
+                </div>
               </div>
               <p>
-                Only you can see your unassigned meetings and workspace choices.
-                If you belong to one workspace, meetings are assigned
-                automatically.
+                Your inbox is private. Assigning a meeting shares it with that workspace.
+                Disconnecting stops calendar sync and future automatic joins; shared meeting history stays in its workspace.
               </p>
             </section>
             <div className="meeting-section-heading">
-              <h2>Unassigned meetings</h2>
+              <h2>Your upcoming meetings</h2>
               <span>Times shown in your local timezone</span>
             </div>
             {!events.length ? (
               <Empty
                 icon={<Inbox />}
                 title="You’re all caught up"
-                description="Meetings needing a workspace choice appear here after calendar sync. Automatically assigned meetings are in your workspace’s Meetings page."
+                description={status?.status === "connected" ? "Upcoming Google Meet meetings appear here after sync, including meetings you are invited to." : "Connect your Google Calendar to see your upcoming Google Meet meetings here."}
               />
             ) : (
               <div className="meeting-list">
@@ -543,10 +616,10 @@ export function CalendarInbox() {
                         <span className="status-pill">No Google Meet link</span>
                       )}
                     </div>
-                    <button
+                    {item.meeting_id ? <span className="status-pill green">Assigned</span> : <button
                       className="button primary"
                       disabled={
-                        !item.meet_url || !item.starts_at || !item.ends_at
+                        !item.meet_url || !item.starts_at || !item.ends_at || connectionBusy
                       }
                       onClick={() => {
                         setSelected(item);
@@ -557,7 +630,7 @@ export function CalendarInbox() {
                       }}
                     >
                       Assign workspace
-                    </button>
+                    </button>}
                   </article>
                 ))}
               </div>

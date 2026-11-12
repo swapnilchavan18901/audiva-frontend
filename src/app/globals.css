@@ -2511,6 +2511,7 @@ tr:last-child td {
 .meeting-banner p, .meeting-connection p { color: var(--secondary); font-size: 14px; line-height: 1.6; margin: 8px 0 0; }
 .meeting-connection { justify-content: space-between; background: white; }
 .meeting-connection > p { max-width: 320px; }
+.calendar-connection-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .meeting-connection h3 { margin: 12px 0; overflow-wrap: anywhere; }
 .meeting-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
 .meeting-section-heading h2 { font-size: 20px; }
